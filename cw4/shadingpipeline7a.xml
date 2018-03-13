@@ -43,6 +43,7 @@ void main(void)
 
 
 
+
 ]]></vertex>
 <geom>
 <![CDATA[#version 400
@@ -85,6 +86,7 @@ void main() {
   }
   EndPrimitive();
 }
+
 
 
 
@@ -177,6 +179,7 @@ void main(void)
 
 
 
+
 ]]></frag>
 <R2TVert>
 <![CDATA[#version 400
@@ -198,6 +201,7 @@ void  main ()
 	
     gl_Position  = vertex_modelSpace; 
 }
+
 
 
 
@@ -256,13 +260,10 @@ uniform float phi = 1000;
 uniform float division_width = 0.4;
 uniform float epsilon = 1e-4;
 const vec3 light_source = vec3(6, 4, 3);
-const float fresnel = 0.8;// Base on Schlick's approximation 
 
 const int raytraceDepth = 42;
 const int numSpheres = 6;
-const int numRay = 3;
 
-vec3 light[numRay];
 
 //example data structures
 struct Ray
@@ -308,36 +309,6 @@ bool solveQuadratic(float a, float b, float c, inout float mui_0, inout float mu
 vec3 reflect(vec3 dir, vec3 normal) {
 	//v' = v - (2v . n)n
 	return dir - (dot(2*dir,normal) * normal);
-}
-
-vec3 refract(vec3 dir, vec3 normal, float ior) {
-	//ior = index of refraction 
-	// Need to make sure you know whether you entering/ leaving the transparent medium
-	vec3 n = normal;
-	float n_dot_v = dot(dir, n);
-	float ior_1 = 1; //when the ray is entering the medium 
-	float ior_2 = ior;
-	
-	if (n_dot_v < 0)  {
-	  // The ray is entering the surface
-	  n_dot_v = - n_dot_v;
-	} else {
-	  //The ray is already in the surface and leaving the surface
-	  float temp = ior_1;
-	  ior_1 = ior_2;
-	  ior_2 = temp;
-	  n = -n;
-	}
-	float coef = ior_1 / ior_2;
-	float n_dot_v_sq = pow(n_dot_v, 2);
-	float coef_sq = pow(coef,2);
-	
-	if ( n_dot_v_sq < (1 - coef_sq)) {
-	  return vec3(0,0,0);
-	} else {
-	  float sq = sqrt(n_dot_v_sq+coef_sq-1) - n_dot_v;
-	  return coef * (sq * n + dir);
-	}
 }
 
 void computeBlinnPhongShading(Ray ray, inout Intersection intersect){
@@ -421,8 +392,6 @@ void plane_intersect(Plane pl, Ray ray, inout Intersection intersect)
 
 Sphere sphere[numSpheres];
 Plane plane;
-
-
 void Intersect(Ray r, inout Intersection i)
 {
 	plane_intersect(plane, r, i);
@@ -451,27 +420,6 @@ vec3 computeShadow(in Intersection intersect)
 	if (intersect.hit == 1) {
 	  return vec3(0,0,0);
 	}
-	return intersect.colour;
-}
-
-vec3 computeMultiShadow(in Intersection intersect, vec3 light)
-{
-//	Ray shadow[numRay];
-	Ray shadow;
-	
-	vec3 temp;
-	  shadow.origin = intersect.point + epsilon * intersect.normal;
-	  shadow.dir = normalize(light - shadow.origin);
-	  // Compute shadow if there's some obstruction in between
-	  intersect.hit = 0;
-	  //Check if the shadow(secodary) ray is blocked by other object 
-	  Intersect(shadow, intersect);
-	  // When there's obstruction, then return 0 brightness
-	  if (intersect.hit == 1) {
-	   return vec3(0,0,0);
-	
-	  }
-	
 	return intersect.colour;
 }
 
@@ -505,11 +453,6 @@ void main()
 	//scene definition end
 //	vec4 colour = vec4(0,0,0,1);
 
-//////// multi- light source
-	light[0] = vec3(6,4,3);
-	light[1] = vec3(-3,-2,1);
-	light[2] = vec3(-5,-4,-3);
-
 	Ray r;
 	vec3 o = vec3(0,0,0);
 	//As from the translation matrix (view matrix) --
@@ -530,28 +473,21 @@ void main()
 	  i.hit = 0;
 	  Intersect(r, i);
 	  if (i.hit == 1) {
-//		outcolour += i.colour;
-//	    contr = contr / (rd + 1);
+	    contr = contr / (rd + 1);
 		computeBlinnPhongShading(r, i);
-
-		for (int l = 0; l < numRay ; l++){
-		contr = contr / (rd + l + 1);
-	  	outcolour += contr * vec4(computeMultiShadow(i, light[l]),1);
-		}
-//		outcolour += contr * vec4(computeShadow(i),1);
+		outcolour += contr * vec4(computeShadow(i),1);
 	  } else {
 	 	break;
 	  }
 	 
 	  r.origin = i.point;
 	  r.origin += epsilon * i.normal;
-//	  r.dir = reflect(r.dir, i.normal);
-	  // assume the balls are glasses and have ior = 1.3
-	  r.dir = fresnel * reflect(r.dir, i.normal) + (1 - fresnel) * refract(r.dir, i.normal, 1.3 ); 
+	  r.dir = reflect(r.dir, i.normal);
 	}
 
 	outcolour = outcolour / 2 ;
 }
+
 
 ]]></R2TFrag>
 </pipeline>
