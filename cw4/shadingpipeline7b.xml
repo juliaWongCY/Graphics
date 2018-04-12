@@ -44,6 +44,7 @@ void main(void)
 
 
 
+
 ]]></vertex>
 <geom>
 <![CDATA[#version 400
@@ -86,6 +87,7 @@ void main() {
   }
   EndPrimitive();
 }
+
 
 
 
@@ -180,6 +182,7 @@ void main(void)
 
 
 
+
 ]]></frag>
 <R2TVert>
 <![CDATA[#version 400
@@ -235,6 +238,7 @@ void  main ()
 
 
 
+
 ]]></R2TVert>
 <R2TFrag>
 <![CDATA[#version 400
@@ -253,8 +257,8 @@ uniform mat3 normalMatrix; //mv matrix without translation
 
 uniform float shininess = 7;
 uniform float ambientCoefficient = 0.3;
-uniform float diffuseCoefficient = 1.3;
-uniform float specularCoefficient = 1;
+uniform float diffuseCoefficient = 1;
+uniform float specularCoefficient = 0.7;
 uniform float phi = 1000;
 
 uniform float division_width = 0.4;
@@ -511,8 +515,8 @@ void main()
 
 //////// multi- light source
 	light[0] = vec3(6,4,3);
-	light[1] = vec3(-3,-2,1);
-	light[2] = vec3(-5,-4,-3);
+	light[1] = vec3(5,4,3);
+	light[2] = vec3(7,4,2);
 
 	Ray r;
 	vec3 o = vec3(0,0,0);
@@ -554,8 +558,9 @@ void main()
 	  r.dir = fresnel * reflect(r.dir, i.normal) + (1 - fresnel) * refract(r.dir, i.normal, 1.3 ); 
 	}
 
-	outcolour = outcolour / 2 ;
+	outcolour = outcolour / 2;
 }
+
 
 
 ]]></R2TFrag>
